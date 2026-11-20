@@ -1,11 +1,298 @@
 <!doctype html>
-<html lang="en">
+<html lang="hi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Evening Milk Delivery & Hisab</title>
+    <link rel="stylesheet" href="css/style.css" />
   </head>
-  <style class="css"></style>
-  <script class="js"></script>
-  <body></body>
+  <body>
+    <header class="app-header">
+      <div class="header-top">
+        <div>
+          <h1>🥛 Dudh Delivery</h1>
+          <p id="currentDateText" class="date-subtitle"></p>
+        </div>
+        <div class="rate-badge">₹65 / kg</div>
+      </div>
+
+      <!-- Live Scooty Stock Bar -->
+      <div class="stock-panel">
+        <div class="stock-header">
+          <span>🛵 Scooty Mein Bache Packets</span>
+          <button id="editStockBtn" class="btn-small">Stock Set Karein</button>
+        </div>
+        <div id="stockGrid" class="stock-grid"></div>
+        <div id="stockTotalSummary" class="stock-summary"></div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="tabs">
+        <button class="tab-btn active" data-tab="routeTab">
+          1. Aaj Ka Route
+        </button>
+        <button class="tab-btn" data-tab="hisabTab">2. Mahine Ka Hisab</button>
+        <button class="tab-btn" data-tab="manageTab">
+          3. Customers & Backup
+        </button>
+      </nav>
+    </header>
+
+    <main class="container">
+      <!-- TAB 1: DAILY EVENING ROUTE -->
+      <section id="routeTab" class="tab-content active">
+        <div class="route-controls">
+          <input
+            type="date"
+            id="deliveryDatePicker"
+            aria-label="Delivery Date"
+          />
+          <input
+            type="text"
+            id="searchCustomerInput"
+            placeholder="Gali ya naam search karein..."
+          />
+        </div>
+
+        <div id="dailySummaryStrip" class="daily-strip"></div>
+        <div id="routeList" class="card-list"></div>
+      </section>
+
+      <!-- TAB 2: MONTHLY HISAB & PAYMENTS -->
+      <section id="hisabTab" class="tab-content">
+        <div class="hisab-controls">
+          <input type="month" id="hisabMonthPicker" aria-label="Select Month" />
+          <div id="monthGrandTotal" class="grand-total-box"></div>
+        </div>
+        <div id="hisabList" class="card-list"></div>
+      </section>
+
+      <!-- TAB 3: ADD/EDIT CUSTOMERS & BACKUP -->
+      <section id="manageTab" class="tab-content">
+        <div class="card form-card">
+          <h3>+ Naya Customer Jodein (Max 35)</h3>
+          <form id="addCustomerForm">
+            <label>
+              Gali / Area ka Naam
+              <input
+                type="text"
+                id="custArea"
+                placeholder="Jaise: Yamuna Colony, Radha Krishna Gali"
+                required
+              />
+            </label>
+            <label>
+              Customer / Ghar ki Pehchan
+              <input
+                type="text"
+                id="custName"
+                placeholder="Jaise: Rekha Arya ke saamne 2nd floor"
+                required
+              />
+            </label>
+            <label>
+              Phone Number (WhatsApp ke liye - Optional)
+              <input
+                type="tel"
+                id="custPhone"
+                placeholder="10 digit mobile number"
+              />
+            </label>
+            <label>
+              Roz Ka Packet Size
+              <select id="custPacket">
+                <option value="2">2 kg (₹130)</option>
+                <option value="1.5">1.5 kg (₹97.50)</option>
+                <option value="1" selected>1 kg (₹65)</option>
+                <option value="0.75">0.75 kg (₹48.75)</option>
+                <option value="0.5">0.5 kg (₹32.50)</option>
+              </select>
+            </label>
+            <button type="submit" class="btn-primary full-width">
+              Customer Save Karein
+            </button>
+          </form>
+        </div>
+
+        <div class="card form-card">
+          <h3>💾 Data Backup & Restore</h3>
+          <p class="muted-text">
+            Hafte mein ek baar backup file download karke Google Drive ya
+            WhatsApp par save rakhein.
+          </p>
+          <div class="btn-row">
+            <button id="exportDataBtn" class="btn-secondary">
+              Download Backup
+            </button>
+            <label class="btn-secondary file-label">
+              Restore Backup
+              <input type="file" id="importDataInput" accept=".json" hidden />
+            </label>
+          </div>
+          <button id="resetDemoBtn" class="btn-danger-outline full-width">
+            Reset Default Route
+          </button>
+        </div>
+        <!-- YAHAN PASTE KAREIN (Backup card ke baad aur manageCustomerList ke pehle) -->
+        <div class="card form-card">
+          <h3>⚙️ Maximum Customer Limit Set Karein</h3>
+          <label>
+            Kitne Customers Tak Allow Karna Hai?
+            <input
+              type="number"
+              id="maxCustomerLimitInput"
+              min="1"
+              max="1000"
+            />
+          </label>
+          <button
+            id="saveLimitBtn"
+            class="btn-primary full-width"
+            style="margin-top: 10px"
+          >
+            Limit Save Karein
+          </button>
+        </div>
+
+        <div id="manageCustomerList" class="card-list"></div>
+        <div id="manageCustomerList" class="card-list"></div>
+      </section>
+    </main>
+
+    <!-- MODAL: STOCK EDITOR -->
+    <div id="stockModal" class="modal hidden">
+      <div class="modal-content">
+        <h3>🛵 Aaj Shaam Scooty Stock Set Karein</h3>
+        <form id="stockForm">
+          <div class="stock-inputs">
+            <label
+              >2 kg (Max 4):
+              <input type="number" id="stk2" min="0" max="20" required
+            /></label>
+            <label
+              >1.5 kg (Max 6):
+              <input type="number" id="stk1_5" min="0" max="20" required
+            /></label>
+            <label
+              >1 kg (Max 18):
+              <input type="number" id="stk1" min="0" max="35" required
+            /></label>
+            <label
+              >0.75 kg (Max 1):
+              <input type="number" id="stk0_75" min="0" max="20" required
+            /></label>
+            <label
+              >0.5 kg (Max 6):
+              <input type="number" id="stk0_5" min="0" max="20" required
+            /></label>
+          </div>
+          <div class="btn-row">
+            <button type="button" id="setMaxStockBtn" class="btn-secondary">
+              Full 35 Set Karein
+            </button>
+            <button type="submit" class="btn-primary">Save Stock</button>
+          </div>
+          <button
+            type="button"
+            class="btn-text close-modal"
+            data-close="stockModal"
+          >
+            Band Karein
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: EXTRA MILK / DAHI / PANEER / GHEE -->
+    <div id="extraModal" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="extraModalTitle">Extra Delivery / Dairy Product</h3>
+        <form id="extraForm">
+          <input type="hidden" id="extraCustId" />
+          <label>
+            Aaj Ka Dudh Packet (agar badla ho):
+            <select id="extraMilkPacket">
+              <option value="0">Koi Dudh Nahi (0 kg)</option>
+              <option value="0.5">0.5 kg (₹32.50)</option>
+              <option value="0.75">0.75 kg (₹48.75)</option>
+              <option value="1">1 kg (₹65)</option>
+              <option value="1.5">1.5 kg (₹97.50)</option>
+              <option value="2">2 kg (₹130)</option>
+              <option value="2.5">2.5 kg (1.5 + 1 kg) (₹162.50)</option>
+              <option value="3">3 kg (2 + 1 kg) (₹195)</option>
+            </select>
+          </label>
+
+          <hr />
+          <p class="section-label">
+            Milk Product (Dahi, Paneer, Ghee, Makkhan - Optional)
+          </p>
+          <label>
+            Item ka Naam
+            <input
+              type="text"
+              id="extraItemName"
+              placeholder="Jaise: Dahi 500g ya Paneer 250g"
+            />
+          </label>
+          <label>
+            Item ki Keemat (₹ Rupees)
+            <input
+              type="number"
+              id="extraItemPrice"
+              min="0"
+              step="0.5"
+              placeholder="Jaise: 60"
+            />
+          </label>
+
+          <div class="btn-row">
+            <button type="submit" class="btn-primary">Save Delivery</button>
+            <button
+              type="button"
+              class="btn-secondary close-modal"
+              data-close="extraModal"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: PAYMENT ENTRY -->
+    <div id="paymentModal" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="paymentModalTitle">Payment Jama Karein</h3>
+        <form id="paymentForm">
+          <input type="hidden" id="payCustId" />
+          <label>
+            Kitne Rupees Mile (₹)
+            <input type="number" id="payAmount" min="1" step="0.5" required />
+          </label>
+          <label>
+            Payment Mode
+            <select id="payMode">
+              <option value="Cash">Cash</option>
+              <option value="UPI">UPI / PhonePe / GPay</option>
+            </select>
+          </label>
+          <div class="btn-row">
+            <button type="submit" class="btn-primary">
+              Payment Save Karein
+            </button>
+            <button
+              type="button"
+              class="btn-secondary close-modal"
+              data-close="paymentModal"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="js/script.js"></script>
+  </body>
 </html>
